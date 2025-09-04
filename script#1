@@ -1,0 +1,25 @@
+param(
+    [string]$RegPath    = 'HKLM:\SOFTWARE\Microsoft\Windows Defender\Spynet',
+    [string]$RegName    = 'SubmitSamplesConsent',
+    [string]$MpProperty = 'SubmitSamplesConsent',
+    [int]   $Expected   = 1
+)
+
+# Lecture des valeurs
+$regVal = (Get-ItemProperty -Path $RegPath -Name $RegName -ErrorAction SilentlyContinue).$RegName
+$defVal = (Get-MpPreference).$MpProperty
+
+# Affichage des valeurs lues
+Write-Host "Valeur Registre [$RegName] = $regVal"
+Write-Host "Valeur Defender [$MpProperty] = $defVal"
+
+# Décision
+if (("$regVal" -eq "$defVal") -and ("$defVal" -eq "$Expected")) {
+    Write-Host "Conforme : valeurs identiques et égales à '$Expected'."
+    Set-ExecutionPolicy -ExecutionPolicy Bypass -Force
+} else {
+    Write-Warning "ALERTE : Différence détectée (Registre='$regVal' vs Defender='$defVal')."
+    Set-ExecutionPolicy -ExecutionPolicy Restricted -Force
+}
+
+

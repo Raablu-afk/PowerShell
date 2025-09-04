@@ -1,0 +1,21 @@
+param(
+    [string]$ApiUrl = 'https://api.chucknorris.io/jokes/random',
+    [int]   $Count  = 5,
+    [string]$OutCsv = '.\api_resultats.csv'
+)
+
+$data = @()
+
+for ($i = 1; $i -le $Count; $i++) {
+    $resp = Invoke-RestMethod -Uri $ApiUrl
+    $item = $resp | Select-Object `
+        Id, `
+        @{ n = 'Texte';  e = { $_.value } }, `
+        @{ n = 'RecuLe'; e = { Get-Date } }
+    $data += $item
+}
+
+$data | Export-Csv -Path $OutCsv -NoTypeInformation -Encoding UTF8
+
+Write-Host "Entrées exportées : $($data.Count)"
+Write-Host "Fichier CSV : $OutCsv"

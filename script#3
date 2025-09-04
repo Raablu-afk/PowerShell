@@ -1,0 +1,36 @@
+param(
+    [string]$ScanType = 'QuickScan',          # QuickScan ou FullScan
+    [string]$OutCsv   = '.\defender_detections.csv'
+)
+
+# Vérification / activation de la protection en temps réel
+$rt = (Get-MpComputerStatus).RealTimeProtectionEnabled
+if ($rt -eq $false) {
+    Set-MpPreference -DisableRealtimeMonitoring $false
+    Write-Host "Protection en temps réel : activée"
+}
+else {
+    Write-Host "Protection en temps réel : déjà activée"
+}
+
+# Lancer le scan
+Write-Host "Lancement du scan : $ScanType"
+Start-MpScan -ScanType $ScanType
+
+# Récupérer et exporter les détections
+$det = Get-MpThreatDetection
+$data = @()
+if ($det) {
+    $data = $det | Select-Object `
+        @{ n='Id';           e={ $_.ThreatID } },
+        @{ n='Nom';          e={ $_.ThreatName } },
+        @{ n='Severite';     e={ $_.SeverityID } },
+        @{ n='Detection';    e={ $_.InitialDetectionTime } },
+        @{ n='ActionSucces'; e={ $_.ActionSuccess } }
+}
+
+$data | Export-Csv -Path $OutCsv -NoTypeInformation -Encoding UTF8
+
+Write-Host "Scan terminé : $ScanType"
+Write-Host "Entrées exportées : $($data.Count)"
+Write-Host "Fichier CSV : $OutCsv"
